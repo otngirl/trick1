@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EAskate トリックルーレット</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+JP:wght@400;500&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0d0d0d;
+    --surface: #161616;
+    --border: #2a2a2a;
+    --text: #f0ede6;
+    --muted: #666;
+    --accent: #e8ff47;
+    --accent-dark: #b8cc1a;
+    --green: #4ade80;
+    --green-dark: #16a34a;
+    --red: #f87171;
+    --red-dark: #dc2626;
+    --yellow: #fbbf24;
+    --yellow-dark: #d97706;
+  }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1.25rem;
+    overflow-x: hidden;
+  }
+  .header {
+    text-align: center;
+    margin-bottom: 1.75rem;
+    animation: fadeUp 0.5s ease both;
+  }
+  .title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2.8rem, 10vw, 5rem);
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .subtitle {
+    font-size: 0.78rem;
+    color: var(--muted);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-top: 0.4rem;
+  }
+  .stats {
+    display: flex;
+    gap: 1px;
+    width: 100%;
+    max-width: 480px;
+    margin-bottom: 1rem;
+    animation: fadeUp 0.5s 0.05s ease both;
+  }
+  .stat {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 0.75rem 0.5rem;
+    text-align: center;
+  }
+  .stat:first-child { border-radius: 4px 0 0 4px; }
+  .stat:last-child  { border-radius: 0 4px 4px 0; }
+  .stat-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.8rem;
+    letter-spacing: 0.06em;
+    line-height: 1;
+  }
+  .stat-num.landed { color: var(--green); }
+  .stat-num.biffed { color: var(--red); }
+  .stat-num.skipped { color: var(--yellow); }
+  .stat-num.rate   { color: var(--accent); }
+  .stat-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    margin-top: 2px;
+  }
+  .card {
+    width: 100%;
+    max-width: 480px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    margin-bottom: 1rem;
+    min-height: 190px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    position: relative;
+    animation: fadeUp 0.5s 0.1s ease both;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+  }
+  .card.flash::before { transform: scaleX(1); }
+  .card.result-landed { border-color: var(--green-dark); }
+  .card.result-biffed { border-color: var(--red-dark); }
+  .card.result-skipped { border-color: var(--yellow-dark); }
+  .result-overlay {
+    position: absolute;
+    top: 8px; right: 10px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1rem;
+    letter-spacing: 0.1em;
+    opacity: 0.7;
+  }
+  .result-overlay.landed  { color: var(--green); }
+  .result-overlay.biffed  { color: var(--red); }
+  .result-overlay.skipped { color: var(--yellow); }
+  .badge {
+    font-size: 0.7rem;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.15em;
+    padding: 3px 12px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 2px;
+  }
+  .trick-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2rem, 7vw, 3.2rem);
+    letter-spacing: 0.04em;
+    color: var(--text);
+    line-height: 1.15;
+    animation: pop 0.2s ease;
+  }
+  .trick-input {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1rem;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    animation: pop 0.2s 0.05s ease both;
+  }
+  .empty {
+    color: var(--muted);
+    font-size: 0.9rem;
+    letter-spacing: 0.1em;
+  }
+  .result-btns {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+    max-width: 480px;
+    margin-bottom: 8px;
+    animation: fadeUp 0.5s 0.15s ease both;
+  }
+  .btn-result {
+    flex: 1;
+    padding: 0.85rem;
+    border: none;
+    border-radius: 4px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.3rem;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    opacity: 0.25;
+    pointer-events: none;
+  }
+  .btn-result.active { opacity: 1; pointer-events: auto; }
+  .btn-result:active { transform: scale(0.97); }
+  .btn-landed  { background: var(--green);  color: #0d0d0d; }
+  .btn-landed:hover  { background: #86efac; }
+  .btn-biffed  { background: var(--red);    color: #0d0d0d; }
+  .btn-biffed:hover  { background: #fca5a5; }
+  .btn-skipped { background: var(--yellow); color: #0d0d0d; }
+  .btn-skipped:hover { background: #fcd34d; }
+  .btn-next {
+    width: 100%;
+    max-width: 480px;
+    padding: 1.1rem;
+    background: var(--accent);
+    color: #0d0d0d;
+    border: none;
+    border-radius: 4px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.5rem;
+    letter-spacing: 0.12em;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    animation: fadeUp 0.5s 0.2s ease both;
+  }
+  .btn-next:hover { background: #f5ff6e; }
+  .btn-next:active { transform: scale(0.98); background: var(--accent-dark); }
+  .hint-key {
+    margin-top: 1rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    animation: fadeUp 0.5s 0.3s ease both;
+    text-align: center;
+    line-height: 1.8;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes pop {
+    0%   { transform: scale(0.94); opacity: 0; }
+    60%  { transform: scale(1.03); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="title">TRICK<br>ROULETTE</div>
+  <div class="subtitle">EAskate / Solo Practice</div>
+</div>
+
+<div class="stats">
+  <div class="stat">
+    <div class="stat-num landed" id="s-landed">0</div>
+    <div class="stat-label">LANDED</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num biffed" id="s-biffed">0</div>
+    <div class="stat-label">BIFFED</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num skipped" id="s-skipped">0</div>
+    <div class="stat-label">SKIP</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num rate" id="s-rate">—</div>
+    <div class="stat-label">LAND %</div>
+  </div>
+</div>
+
+<div class="card" id="card">
+  <p class="empty">ボタンを押してスタート</p>
+</div>
+
+<div class="result-btns">
+  <button class="btn-result btn-landed"  id="btn-landed"  onclick="markResult('landed')">✓ LANDED</button>
+  <button class="btn-result btn-biffed"  id="btn-biffed"  onclick="markResult('biffed')">✗ BIFFED</button>
+  <button class="btn-result btn-skipped" id="btn-skipped" onclick="markResult('skipped')">— SKIP</button>
+</div>
+
+<button class="btn-next" onclick="next()">NEXT TRICK</button>
+
+<div class="hint-key">
+  SPACE / ENTER → next &nbsp;|&nbsp; L → landed &nbsp;|&nbsp; B → biffed &nbsp;|&nbsp; S → skip
+</div>
+
+<script>
+const TRICKS = [
+  ["FS 50-50 グラインド","RN","FS"],["FS 5-0","R↙","FS"],["FS ノーズグラインド","R↑","FS"],
+  ["FS クルックド","R↖","FS"],["FS オーバークルック","R↗","FS"],["FS サラダ","R➘","FS"],
+  ["FS スミス","R→↗↑","FS"],["FS フィーブル","R←↖↑","FS"],["FS ウィリー","R←↙↓","FS"],
+  ["FS オーバーウィリー","R→➘↓","FS"],["FS ボードスライド","R←","FS"],["FS リップスライド","R→","FS"],
+  ["FS ノーズスライド","R↑↖←","FS"],["FS テールスライド","R↓↙←","FS"],["FS ブラントスライド","R↓➘→","FS"],
+  ["FS ノーズブラント","R↑↗→","FS"],
+  ["BS 50-50 グラインド","RN","BS"],["BS 5-0","R➘","BS"],["BS ノーズグラインド","R↑","BS"],
+  ["BS クルックド","R↗","BS"],["BS オーバークルック","R↖","BS"],["BS サラダ","R↙","BS"],
+  ["BS スミス","R←↖↑","BS"],["BS フィーブル","R→↗↑","BS"],["BS ウィリー","R→➘↓","BS"],
+  ["BS オーバーウィリー","R←↙↓","BS"],["BS ボードスライド","R→","BS"],["BS リップスライド","R←","BS"],
+  ["BS ノーズスライド","R↑↗→","BS"],["BS テールスライド","R↓➘→","BS"],["BS ブラントスライド","R↓↙←","BS"],
+  ["BS ノーズブラント","R↑↖←","BS"],
+  ["スイッチ FS 50-50 グラインド","スイッチオーリー + ニュートラ","Sw.FS"],["スイッチ FS 5-0","スイッチオーリー + R↗","Sw.FS"],
+  ["スイッチ FS ノーズグラインド","スイッチオーリー + R↓","Sw.FS"],["スイッチ FS クルックド","スイッチオーリー + R↙","Sw.FS"],
+  ["スイッチ FS オーバークルック","スイッチオーリー + R➘","Sw.FS"],["スイッチ FS スミス","スイッチオーリー + R←↙↓","Sw.FS"],
+  ["スイッチ FS フィーブル","スイッチオーリー + R→➘↓","Sw.FS"],["スイッチ FS ウィリー","スイッチオーリー + R→↗↑","Sw.FS"],
+  ["スイッチ FS オーバーウィリー","スイッチオーリー + R←↖↑","Sw.FS"],["スイッチ FS ボードスライド","スイッチオーリー + R→","Sw.FS"],
+  ["スイッチ FS リップスライド","スイッチオーリー + R←","Sw.FS"],["スイッチ FS ノーズスライド","スイッチオーリー + R↓↙←","Sw.FS"],
+  ["スイッチ FS テールスライド","スイッチオーリー + R↑↖←","Sw.FS"],["スイッチ FS ブラントスライド","スイッチオーリー + R↑↗→","Sw.FS"],
+  ["スイッチ FS ノーズブラント","スイッチオーリー + R↓➘→","Sw.FS"],
+  ["スイッチ BS 50-50 グラインド","スイッチオーリー + ニュートラ","Sw.BS"],["スイッチ BS 5-0","スイッチオーリー + R↗","Sw.BS"],
+  ["スイッチ BS ノーズグラインド","スイッチオーリー + R↓","Sw.BS"],["スイッチ BS クルックド","スイッチオーリー + R➘","Sw.BS"],
+  ["スイッチ BS オーバークルック","スイッチオーリー + R↙","Sw.BS"],["スイッチ BS サラダ","スイッチオーリー + R↖","Sw.BS"],
+  ["スイッチ BS スミス","スイッチオーリー + R→➘↓","Sw.BS"],["スイッチ BS フィーブル","スイッチオーリー + R←↙↓","Sw.BS"],
+  ["スイッチ BS ウィリー","スイッチオーリー + R←↖↑","Sw.BS"],["スイッチ BS オーバーウィリー","スイッチオーリー + R→↗↑","Sw.BS"],
+  ["スイッチ BS ボードスライド","スイッチオーリー + R←","Sw.BS"],["スイッチ BS リップスライド","スイッチオーリー + R→","Sw.BS"],
+  ["スイッチ BS ノーズスライド","スイッチオーリー + R↓➘→","Sw.BS"],["スイッチ BS テールスライド","スイッチオーリー + R↑↗→","Sw.BS"],
+  ["スイッチ BS ブラントスライド","スイッチオーリー + R↑↖←","Sw.BS"],["スイッチ BS ノーズブラント","スイッチオーリー + R↓↙←","Sw.BS"],
+  ["フェイキー FS 50-50 グラインド","フェイキーオーリー + RN","Fk.FS"],["フェイキー FS 5-0","フェイキーオーリー + R↙","Fk.FS"],
+  ["フェイキー FS ノーズグラインド","フェイキーオーリー + R↑","Fk.FS"],["フェイキー FS クルックド","フェイキーオーリー + R↖","Fk.FS"],
+  ["フェイキー FS オーバークルック","フェイキーオーリー + R↗","Fk.FS"],["フェイキー FS サラダ","フェイキーオーリー + R➘","Fk.FS"],
+  ["フェイキー FS スミス","フェイキーオーリー + R→↗↑","Fk.FS"],["フェイキー FS フィーブル","フェイキーオーリー + R←↖↑","Fk.FS"],
+  ["フェイキー FS ウィリー","フェイキーオーリー + R←↙↓","Fk.FS"],["フェイキー FS オーバーウィリー","フェイキーオーリー + R→➘↓","Fk.FS"],
+  ["フェイキー FS ボードスライド","フェイキーオーリー + R→","Fk.FS"],["フェイキー FS リップスライド","フェイキーオーリー + R←","Fk.FS"],
+  ["フェイキー FS ノーズスライド","フェイキーオーリー + R↑↗→","Fk.FS"],["フェイキー FS テールスライド","フェイキーオーリー + R↓➘→","Fk.FS"],
+  ["フェイキー FS ブラントスライド","フェイキーオーリー + R↓↙←","Fk.FS"],["フェイキー FS ノーズブラント","フェイキーオーリー + R↑↖←","Fk.FS"],
+  ["フェイキー BS 50-50 グラインド","フェイキーオーリー + RN","Fk.BS"],["フェイキー BS 5-0","フェイキーオーリー + R➘","Fk.BS"],
+  ["フェイキー BS ノーズグラインド","フェイキーオーリー + R↑","Fk.BS"],["フェイキー BS クルックド","フェイキーオーリー + R↗","Fk.BS"],
+  ["フェイキー BS オーバークルック","フェイキーオーリー + R↖","Fk.BS"],["フェイキー BS サラダ","フェイキーオーリー + R↙","Fk.BS"],
+  ["フェイキー BS スミス","フェイキーオーリー + R←↖↑","Fk.BS"],["フェイキー BS フィーブル","フェイキーオーリー + R→↗↑","Fk.BS"],
+  ["フェイキー BS ウィリー","フェイキーオーリー + R→➘↓","Fk.BS"],["フェイキー BS オーバーウィリー","フェイキーオーリー + R←↙↓","Fk.BS"],
+  ["フェイキー BS ボードスライド","フェイキーオーリー + R←","Fk.BS"],["フェイキー BS リップスライド","フェイキーオーリー + R→","Fk.BS"],
+  ["フェイキー BS ノーズスライド","フェイキーオーリー + R↑↖←","Fk.BS"],["フェイキー BS テールスライド","フェイキーオーリー + R↓↙←","Fk.BS"],
+  ["フェイキー BS ブラントスライド","フェイキーオーリー + R↓➘→","Fk.BS"],["フェイキー BS ノーズブラント","フェイキーオーリー + R↑↗→","Fk.BS"],
+];
+
+let last = -1;
+let counts = { landed: 0, biffed: 0, skipped: 0 };
+let waiting = false;
+
+function updateStats() {
+  document.getElementById('s-landed').textContent  = counts.landed;
+  document.getElementById('s-biffed').textContent  = counts.biffed;
+  document.getElementById('s-skipped').textContent = counts.skipped;
+  const tried = counts.landed + counts.biffed;
+  document.getElementById('s-rate').textContent = tried > 0 ? Math.round(counts.landed / tried * 100) + '%' : '—';
+}
+
+function setResultBtns(enabled) {
+  ['btn-landed','btn-biffed','btn-skipped'].forEach(id =>
+    document.getElementById(id).classList.toggle('active', enabled)
+  );
+  waiting = enabled;
+}
+
+function next() {
+  if (waiting) markResult('skipped');
+  let idx;
+  do { idx = Math.floor(Math.random() * TRICKS.length); } while (TRICKS.length > 1 && idx === last);
+  last = idx;
+  const [name, input, stance] = TRICKS[idx];
+  const card = document.getElementById('card');
+  card.classList.remove('flash','result-landed','result-biffed','result-skipped');
+  void card.offsetWidth;
+  card.classList.add('flash');
+  card.innerHTML = `
+    <div class="badge">${stance}</div>
+    <div class="trick-name">${name}</div>
+    <div class="trick-input">${input}</div>
+  `;
+  setResultBtns(true);
+}
+
+function markResult(type) {
+  if (!waiting) return;
+  counts[type]++;
+  const card = document.getElementById('card');
+  card.classList.add('result-' + type);
+  const labels = { landed: 'LANDED', biffed: 'BIFFED', skipped: 'SKIP' };
+  card.insertAdjacentHTML('beforeend', `<div class="result-overlay ${type}">${labels[type]}</div>`);
+  updateStats();
+  setResultBtns(false);
+}
+
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); next(); }
+  if (e.code === 'KeyL') markResult('landed');
+  if (e.code === 'KeyB') markResult('biffed');
+  if (e.code === 'KeyS') markResult('skipped');
+});
+</script>
+</body>
+</html>
